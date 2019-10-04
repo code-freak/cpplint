@@ -1,6 +1,19 @@
 cpplint - static code checker for C++
 =====================================
 
+customized
+----------
+This fork extends the default Google C/C++ style guide with a few non-standard rules. These are intended to be used for
+students learning to code and enforce some more strict rules on them like:
+
+1. Only one statement per line
+2. Require indentation
+3. Require curly braces for if/else/for/while/do statements
+4. Create a newline after if/else/for/while/do curly-brace open
+5. Require curly brace close to be on a separate line
+
+------------------
+
 .. image:: https://travis-ci.org/cpplint/cpplint.svg?branch=master
     :target: https://travis-ci.org/cpplint/cpplint
 

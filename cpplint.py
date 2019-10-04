@@ -4655,6 +4655,11 @@ def CheckStyle(filename, clean_lines, linenum, file_extension, nesting_state,
   CheckSpacingForFunctionCall(filename, clean_lines, linenum, error)
   CheckCheck(filename, clean_lines, linenum, error)
   CheckAltTokens(filename, clean_lines, linenum, error)
+  CheckNewLineAfterCurlyOpen(filename, clean_lines, linenum, error)
+  CheckNewLineBeforeCurlyClose(filename, clean_lines, linenum, error)
+  CheckIndentation(filename, clean_lines, linenum, nesting_state, error)
+  CheckNotMoreThanOneStatementPerLine(filename, clean_lines, linenum, error)
+  CheckOneLineControlStatements(filename, clean_lines, linenum, error)
   classinfo = nesting_state.InnermostClass()
   if classinfo:
     CheckSectionSpacing(filename, clean_lines, classinfo, linenum, error)
@@ -6038,6 +6043,102 @@ def CheckItemIndentationInNamespace(filename, raw_lines_no_comments, linenum,
   if Match(r'^\s+', line):
     error(filename, linenum, 'runtime/indentation_namespace', 4,
           'Do not indent within a namespace')
+
+
+def CheckNewLineAfterCurlyOpen(filename, clean_lines, linenum, error):
+  """
+  NOOBs custom rule!
+  Require a new-line after every opening curly brace for classes, namespaces, for/while/do-loops and function bodies
+
+  Args:
+    filename: The name of the current file.
+    clean_lines: A CleansedLines instance containing the file.
+    include_state: An _IncludeState instance.
+    error: The function to call with any errors found.
+  """
+  line = clean_lines.elided[linenum]
+  # find an opening curly brace and decide afterwards if a newline is strictly required
+  match = Search(r'{(?=[^\n])', line)
+  if match:
+    if IsForwardClassDeclaration(clean_lines.elided, linenum)\
+            or IsFunctionDeclaration(clean_lines.elided, linenum)\
+            or IsNamespaceDeclaration(clean_lines.elided, linenum)\
+            or Search(r'(?:do|else)\s+{', clean_lines[linenum]) is not None:
+      error(filename, linenum, 'whitespace/newline_curly_open', 4,
+            "Expected new line after { in column %d" % match.span()[0])
+
+
+def IsFunctionDeclaration(clean_lines, linenum):
+  # warning: this does also match while(), for(), if(), ...
+  return Search(r'(\w(\w|::|\*|\&|\s)*)\(', clean_lines[linenum]) is not None
+
+
+def IsNamespaceDeclaration(clean_lines, linenum):
+  return Search(r'namespace\s+[a-zA-Z][\w]+', clean_lines[linenum]) is not None
+
+
+def CheckNewLineBeforeCurlyClose(filename, clean_lines, linenum, error):
+  # find a closing brace on this line
+  line = clean_lines.elided[linenum]
+  match = Match(r'^(.*)(})(.*)$', line)
+  # raise an error if } is not the only character on this line
+  if match and (match[1].strip() != "" or match[3].strip() != ""):
+      # allow } else { on the same line - another rule enforces this
+      if Match(r'^\s*}\s*else(?:\s*{)?\s*$', line):
+        return
+      error(filename, linenum, 'whitespace/newline_curly_close', 4,
+            "The closing curly brace should be the only character on a line")
+
+
+def CheckIndentation(filename, clean_lines, linenum, nesting_state: NestingState, error):
+  line = clean_lines.elided[linenum]
+  nesting_level = len(nesting_state.stack)
+  expected_indentation = nesting_level
+  in_block = len(nesting_state.stack) > 0
+
+  open_block_line = 0
+  if len(nesting_state.stack) > 0:
+    open_block_line = nesting_state.stack[-1].starting_linenum
+
+  is_opening_block = True if (in_block and open_block_line == linenum) else False
+  if is_opening_block:
+    expected_indentation -= 1
+
+  is_switch_block = False
+  if in_block and not is_opening_block:
+    is_switch_block = Search(r'switch\s*\(', clean_lines.elided[open_block_line]) is not None
+
+  # require additional indents for case-block contents
+  if is_switch_block and Search(r'case\s+.*?:', line) is None:
+    expected_indentation += 1
+
+  # detect one-line for/if/while/.. statements without curly braces
+  if linenum > 0 and IsOneLineControlStatement(clean_lines.elided[linenum - 1]):
+    expected_indentation += 1
+
+  match = Match(r'^(\s*)[^\n]*$', line)
+  if match:
+    num_indents = len(match[1])
+    if num_indents != expected_indentation * 2:
+      error(filename, linenum, 'whitespace/num_indents', 4,
+            "Expected an indentation of %d spaces. Found %d" % (expected_indentation * 2, num_indents))
+
+
+def CheckNotMoreThanOneStatementPerLine(filename, clean_lines, linenum, error):
+  line = clean_lines.elided[linenum]
+  if Match(r'^(?:.+(?=;);){2,}$', line):
+      error(filename, linenum, 'readability/one_statement_per_line', 4,
+            "Every line should not contain more than one statement")
+
+
+def CheckOneLineControlStatements(filename, clean_lines, linenum, error):
+  if IsOneLineControlStatement(clean_lines.elided[linenum]):
+    error(filename, linenum, 'readability/control_statement_curly', 4,
+          "if/else, for, while and do-while bodys should be wrapped in curly braces")
+
+
+def IsOneLineControlStatement(line):
+  return Match(r'^\s*(?:(?:for|while|if|)\s*\(.*?\)|}?\s*else|do)(?!{)$', line) is not None
 
 
 def ProcessLine(filename, file_extension, clean_lines, line,
