@@ -3560,9 +3560,9 @@ def CheckOperatorSpacing(filename, clean_lines, linenum, error):
     error(filename, linenum, 'whitespace/operators', 4,
           'Missing spaces around =')
 
-  # It's ok not to have spaces around binary operators like + - * /, but if
-  # there's too little whitespace, we get concerned.  It's hard to tell,
-  # though, so we punt on this one for now.  TODO.
+  match = Search(r'(?<!operator)(?:[+\-/*](?=\s)|(?<=\s)[+\-/*])', line)
+  if match:
+    error(filename, linenum, 'whitespace/operators', 4, 'Please remove any whitespace around %s' % match[0])
 
   # You should always have whitespace around binary operators.
   #
