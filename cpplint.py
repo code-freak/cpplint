@@ -6119,9 +6119,9 @@ def CheckIndentation(filename, clean_lines, linenum, nesting_state: NestingState
   match = Match(r'^(\s*)[^\n]*$', line)
   if match:
     num_indents = len(match[1])
-    if num_indents != expected_indentation * 2:
+    if num_indents != expected_indentation * 4:
       error(filename, linenum, 'whitespace/num_indents', 4,
-            "Expected an indentation of %d spaces. Found %d" % (expected_indentation * 2, num_indents))
+            "Expected an indentation of %d spaces. Found %d" % (expected_indentation * 4, num_indents))
 
 
 def CheckNotMoreThanOneStatementPerLine(filename, clean_lines, linenum, error):
