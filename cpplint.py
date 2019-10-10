@@ -6096,6 +6096,10 @@ def CheckIndentation(filename, clean_lines, linenum, nesting_state: NestingState
   expected_indentation = nesting_level
   in_block = len(nesting_state.stack) > 0
 
+  # do not check empty lines
+  if Match(r'^\s*$', line):
+    return
+
   open_block_line = 0
   if len(nesting_state.stack) > 0:
     open_block_line = nesting_state.stack[-1].starting_linenum
