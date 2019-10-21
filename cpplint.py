@@ -3560,7 +3560,7 @@ def CheckOperatorSpacing(filename, clean_lines, linenum, error):
     error(filename, linenum, 'whitespace/operators', 4,
           'Missing spaces around =')
 
-  match = Search(r'(?<!operator)(?:[+\-/*](?=\s)|(?<=\s)[+\-/*])', line)
+  match = Search(r'(?<!operator)(?:(?:[+\-/*](?=\s)|(?<=\s)[+\-/*]))(?!=)', line)
   if match:
     error(filename, linenum, 'whitespace/operators', 4, 'Please remove any whitespace around %s' % match[0])
 
