@@ -3523,7 +3523,7 @@ def CheckSpacing(filename, clean_lines, linenum, nesting_state, error):
           'Missing space around colon in range-based for loop')
 
 
-def CheckOperatorSpacing(filename, clean_lines, linenum, error):
+def CheckOperatorSpacing(filename, clean_lines, nesting_state, linenum, error):
   """Checks for horizontal spacing around operators.
 
   Args:
@@ -3560,9 +3560,10 @@ def CheckOperatorSpacing(filename, clean_lines, linenum, error):
     error(filename, linenum, 'whitespace/operators', 4,
           'Missing spaces around =')
 
-  match = Search(r'(?<!operator)(?:(?:[+\-/*](?=\s)|(?<=\s)[+\-/*]))(?!=)', line)
+  match = Search(r'([a-z_]\w*)\s*((?<!operator)(?:(?:[+\-/*](?=\s)|(?<=\s)[+\-/*]))(?!=))\s*([a-z_]\w*)', line)
   if match:
-    error(filename, linenum, 'whitespace/operators', 4, 'Please remove any whitespace around %s' % match[0])
+    if not _IsType(clean_lines, nesting_state, match[1]):
+      error(filename, linenum, 'whitespace/operators', 4, 'Please remove all whitespace around %s' % match[2])
 
   # You should always have whitespace around binary operators.
   #
@@ -4648,7 +4649,7 @@ def CheckStyle(filename, clean_lines, linenum, file_extension, nesting_state,
   CheckTrailingSemicolon(filename, clean_lines, linenum, error)
   CheckEmptyBlockBody(filename, clean_lines, linenum, error)
   CheckSpacing(filename, clean_lines, linenum, nesting_state, error)
-  CheckOperatorSpacing(filename, clean_lines, linenum, error)
+  CheckOperatorSpacing(filename, clean_lines, nesting_state, linenum, error)
   CheckParenthesisSpacing(filename, clean_lines, linenum, error)
   CheckCommaSpacing(filename, clean_lines, linenum, error)
   CheckBracesSpacing(filename, clean_lines, linenum, nesting_state, error)
